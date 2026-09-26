@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapChat-Style Room</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Fredoka', cursive, sans-serif; }
+        body { background: #FFFC00; height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+        /* Login Modal */
+        #login-modal {
+            position: fixed; inset: 0; background: #FFFC00;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10;
+        }
+        .card {
+            background: #fff; padding: 30px; border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); width: 90%; max-width: 360px; text-align: center;
+        }
+        .card h2 { color: #000; margin-bottom: 20px; font-size: 26px; }
+        input {
+            width: 100%; padding: 14px; margin-bottom: 12px; border: 2px solid #EEE;
+            border-radius: 12px; outline: none; font-size: 16px; transition: 0.2s;
+        }
+        input:focus { border-color: #000; }
+        button {
+            width: 100%; padding: 14px; background: #00F0FF; color: #000; border: none;
+            border-radius: 12px; font-weight: 600; font-size: 18px; cursor: pointer; transition: 0.2s;
+        }
+        button:hover { transform: scale(1.02); background: #00D8E6; }
+
+        /* Main Chat Window */
+        #chat-app {
+            display: none; width: 100%; max-width: 450px; height: 90vh;
+            background: #000; border-radius: 30px; overflow: hidden; flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        header { 
+            background: #111; color: #FFFC00; padding: 14px 18px; 
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 18px; font-weight: 600; 
+        }
+        .clear-btn {
+            background: #FF2A85; color: #fff; font-size: 12px; padding: 6px 12px;
+            border-radius: 20px; width: auto; font-weight: normal;
+        }
+
+        #messages {
+            flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+            background: #121212;
+        }
+        .msg { max-width: 75%; padding: 10px 14px; border-radius: 18px; color: #fff; font-size: 15px; position: relative; word-wrap: break-word;}
+        .msg.sent { align-self: flex-end; background: #00F0FF; color: #000; border-bottom-right-radius: 4px; }
+        .msg.received { align-self: flex-start; background: #FF2A85; color: #fff; border-bottom-left-radius: 4px; }
+        
+        .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .msg .sender { font-size: 11px; font-weight: bold; opacity: 0.8; }
+        .delete-icon { cursor: pointer; font-size: 12px; opacity: 0.6; margin-left: 8px; }
+        .delete-icon:hover { opacity: 1; }
+
+        .msg img { width: 100%; border-radius: 12px; margin-top: 5px; }
+        .msg audio { width: 100%; margin-top: 5px; }
+        .system { text-align: center; color: #888; font-size: 12px; align-self: center; }
+
+        /* Footer Controls */
+        footer { padding: 12px; background: #111; display: flex; gap: 8px; align-items: center; position: relative; }
+        footer input[type="text"] { margin-bottom: 0; background: #222; color: #fff; border: none; }
+        .icon-btn { background: none; border: none; font-size: 20px; cursor: pointer; width: auto; padding: 5px; }
+        
+        /* Emoji Picker Quick-Bar */
+        #emoji-bar {
+            display: none; position: absolute; bottom: 65px; left: 12px; background: #222;
+            padding: 8px; border-radius: 12px; gap: 8px;
+        }
+        #emoji-bar span { cursor: pointer; font-size: 20px; }
+    </style>
+</head>
+<body>
+
+    <!-- Login Box -->
+    <div id="login-modal">
+        <div class="card">
+            <h2>✨ Join Chat Room</h2>
+            <input type="text" id="codename-input" placeholder="Your Code Name...">
+            <input type="password" id="password-input" placeholder="Room Password...">
+            <button onclick="joinRoom()">Enter Chat</button>
+        </div>
+    </div>
+
+    <!-- Chat App Screen -->
+    <div id="chat-app">
+        <header>
+            <span>👻 Snapchat Chat</span>
+            <button class="clear-btn" onclick="clearAllChat()">Clear Chat</button>
+        </header>
+        <div id="messages"></div>
+
+        <div id="emoji-bar">
+            <span onclick="addEmoji('❤️')">❤️</span>
+            <span onclick="addEmoji('🔥')">🔥</span>
+            <span onclick="addEmoji('😂')">😂</span>
+            <span onclick="addEmoji('✨')">✨</span>
+            <span onclick="addEmoji('🥺')">🥺</span>
+        </div>
+
+        <footer>
+            <button class="icon-btn" onclick="toggleEmojiBar()">😊</button>
+            <button class="icon-btn" onclick="document.getElementById('file-input').click()">📷</button>
+            <button class="icon-btn" id="record-btn" onclick="toggleRecord()">🎙️</button>
+            
+            <input type="file" id="file-input" accept="image/*" style="display:none" onchange="sendFile(this)">
+            <input type="text" id="msg-input" placeholder="Send a chat..." onkeypress="handleKey(event)">
+            <button onclick="sendText()" style="width: 60px;">Send</button>
+        </footer>
+    </div>
+
+    <script>
+        const socket = io();
+        let currentCodename = '';
+        let mediaRecorder;
+        let audioChunks = [];
+
+        function joinRoom() {
+            const codename = document.getElementById('codename-input').value.trim();
+            const password = document.getElementById('password-input').value.trim();
+
+            if (!codename || !password) return alert('Please enter both name and password!');
+
+            socket.emit('join-room', { codename, password }, (res) => {
+                if (res.success) {
+                    currentCodename = codename;
+                    document.getElementById('login-modal').style.display = 'none';
+                    document.getElementById('chat-app').style.display = 'flex';
+                } else {
+                    alert(res.message);
+                }
+            });
+        }
+
+        function sendText() {
+            const input = document.getElementById('msg-input');
+            if (!input.value.trim()) return;
+            socket.emit('send-message', { type: 'text', content: input.value });
+            input.value = '';
+        }
+
+        function handleKey(e) { if (e.key === 'Enter') sendText(); }
+
+        function toggleEmojiBar() {
+            const bar = document.getElementById('emoji-bar');
+            bar.style.display = bar.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function addEmoji(emoji) {
+            document.getElementById('msg-input').value += emoji;
+            toggleEmojiBar();
+        }
+
+        function sendFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                socket.emit('send-message', { type: 'image', content: e.target.result });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function toggleRecord() {
+            const btn = document.getElementById('record-btn');
+            if (!mediaRecorder || mediaRecorder.state === "inactive") {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        socket.emit('send-message', { type: 'audio', content: e.target.result });
+                    };
+                    reader.readAsDataURL(blob);
+                };
+                mediaRecorder.start();
+                btn.innerText = "🛑";
+            } else {
+                mediaRecorder.stop();
+                btn.innerText = "🎙️";
+            }
+        }
+
+        function deleteMsg(msgId) {
+            socket.emit('delete-message', msgId);
+        }
+
+        function clearAllChat() {
+            if (confirm("Are you sure you want to clear the entire chat room?")) {
+                socket.emit('clear-chat');
+            }
+        }
+
+        socket.on('system-message', (msg) => {
+            const container = document.getElementById('messages');
+            container.innerHTML += `<div class="system">${msg}</div>`;
+            container.scrollTop = container.scrollHeight;
+        });
+
+        socket.on('receive-message', (data) => {
+            const container = document.getElementById('messages');
+            const isMe = data.sender === currentCodename;
+            let body = '';
+
+            if (data.type === 'text') body = data.content;
+            else if (data.type === 'image') body = `<img src="${data.content}" />`;
+            else if (data.type === 'audio') body = `<audio controls src="${data.content}"></audio>`;
+
+            const html = `
+                <div class="msg ${isMe ? 'sent' : 'received'}" id="${data.id}">
+                    <div class="msg-header">
+                        <span class="sender">${isMe ? 'You' : data.sender} • ${data.time}</span>
+                        <span class="delete-icon" onclick="deleteMsg('${data.id}')" title="Delete message">🗑️</span>
+                    </div>
+                    ${body}
+                </div>
+            `;
+            container.innerHTML += html;
+            container.scrollTop = container.scrollHeight;
+        });
+
+        socket.on('message-deleted', (msgId) => {
+            const el = document.getElementById(msgId);
+            if (el) el.remove();
+        });
+
+        socket.on('chat-cleared', () => {
+            document.getElementById('messages').innerHTML = '<div class="system">Chat cleared 🧹</div>';
+        });
+    </script>
+</body>
+</html>
