@@ -3,55 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SnapChat-Style Room</title>
+    <title>Alpha</title>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Fredoka', cursive, sans-serif; }
-        body { background: #FFFC00; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        
+        /* Outer page background */
+        body { 
+            background: #FFFC00; 
+            height: 100vh; 
+            width: 100vw;
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden;
+        }
 
-        /* Login Modal */
+        /* Login Modal Overlay */
         #login-modal {
-            position: fixed; inset: 0; background: #FFFC00;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10;
+            position: fixed; 
+            inset: 0; 
+            background: #FFFC00;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 10;
         }
         .card {
-            background: #fff; padding: 30px; border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); width: 90%; max-width: 360px; text-align: center;
+            background: #fff; 
+            padding: 30px; 
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+            width: 90%; 
+            max-width: 360px; 
+            text-align: center;
         }
         .card h2 { color: #000; margin-bottom: 20px; font-size: 26px; }
         input {
-            width: 100%; padding: 14px; margin-bottom: 12px; border: 2px solid #EEE;
-            border-radius: 12px; outline: none; font-size: 16px; transition: 0.2s;
+            width: 100%; 
+            padding: 14px; 
+            margin-bottom: 12px; 
+            border: 2px solid #EEE;
+            border-radius: 12px; 
+            outline: none; 
+            font-size: 16px; 
+            transition: 0.2s;
         }
         input:focus { border-color: #000; }
         button {
-            width: 100%; padding: 14px; background: #00F0FF; color: #000; border: none;
-            border-radius: 12px; font-weight: 600; font-size: 18px; cursor: pointer; transition: 0.2s;
+            width: 100%; 
+            padding: 14px; 
+            background: #00F0FF; 
+            color: #000; 
+            border: none;
+            border-radius: 12px; 
+            font-weight: 600; 
+            font-size: 18px; 
+            cursor: pointer; 
+            transition: 0.2s;
         }
         button:hover { transform: scale(1.02); background: #00D8E6; }
 
-        /* Main Chat Window */
+        /* Main Chat Window - Full Screen View */
         #chat-app {
-            display: none; width: 100%; max-width: 450px; height: 90vh;
-            background: #000; border-radius: 30px; overflow: hidden; flex-direction: column;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            display: none; 
+            width: 100vw; 
+            height: 100vh;
+            background: #000; 
+            border-radius: 0; 
+            overflow: hidden; 
+            flex-direction: column;
+            box-shadow: none;
         }
         header { 
-            background: #111; color: #FFFC00; padding: 14px 18px; 
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 18px; font-weight: 600; 
+            background: #111; 
+            color: #FFFC00; 
+            padding: 16px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            font-size: 20px; 
+            font-weight: 600; 
         }
         .clear-btn {
-            background: #FF2A85; color: #fff; font-size: 12px; padding: 6px 12px;
-            border-radius: 20px; width: auto; font-weight: normal;
+            background: #FF2A85; 
+            color: #fff; 
+            font-size: 13px; 
+            padding: 8px 14px;
+            border-radius: 20px; 
+            width: auto; 
+            font-weight: normal;
         }
 
         #messages {
-            flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+            flex: 1; 
+            padding: 20px; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px;
             background: #121212;
         }
-        .msg { max-width: 75%; padding: 10px 14px; border-radius: 18px; color: #fff; font-size: 15px; position: relative; word-wrap: break-word;}
+        .msg { 
+            max-width: 75%; 
+            padding: 12px 16px; 
+            border-radius: 18px; 
+            color: #fff; 
+            font-size: 15px; 
+            position: relative; 
+            word-wrap: break-word;
+        }
         .msg.sent { align-self: flex-end; background: #00F0FF; color: #000; border-bottom-right-radius: 4px; }
         .msg.received { align-self: flex-start; background: #FF2A85; color: #fff; border-bottom-left-radius: 4px; }
         
@@ -60,21 +123,27 @@
         .delete-icon { cursor: pointer; font-size: 12px; opacity: 0.6; margin-left: 8px; }
         .delete-icon:hover { opacity: 1; }
 
-        .msg img { width: 100%; border-radius: 12px; margin-top: 5px; }
+        .msg img { width: 100%; max-width: 300px; border-radius: 12px; margin-top: 5px; }
         .msg audio { width: 100%; margin-top: 5px; }
         .system { text-align: center; color: #888; font-size: 12px; align-self: center; }
 
         /* Footer Controls */
-        footer { padding: 12px; background: #111; display: flex; gap: 8px; align-items: center; position: relative; }
+        footer { padding: 14px; background: #111; display: flex; gap: 10px; align-items: center; position: relative; }
         footer input[type="text"] { margin-bottom: 0; background: #222; color: #fff; border: none; }
-        .icon-btn { background: none; border: none; font-size: 20px; cursor: pointer; width: auto; padding: 5px; }
+        .icon-btn { background: none; border: none; font-size: 22px; cursor: pointer; width: auto; padding: 5px; }
         
         /* Emoji Picker Quick-Bar */
         #emoji-bar {
-            display: none; position: absolute; bottom: 65px; left: 12px; background: #222;
-            padding: 8px; border-radius: 12px; gap: 8px;
+            display: none; 
+            position: absolute; 
+            bottom: 70px; 
+            left: 14px; 
+            background: #222;
+            padding: 8px; 
+            border-radius: 12px; 
+            gap: 8px;
         }
-        #emoji-bar span { cursor: pointer; font-size: 20px; }
+        #emoji-bar span { cursor: pointer; font-size: 22px; }
     </style>
 </head>
 <body>
@@ -82,7 +151,7 @@
     <!-- Login Box -->
     <div id="login-modal">
         <div class="card">
-            <h2>✨ Join Chat Room</h2>
+            <h2>✨ Join Alpha</h2>
             <input type="text" id="codename-input" placeholder="Your Code Name...">
             <input type="password" id="password-input" placeholder="Room Password...">
             <button onclick="joinRoom()">Enter Chat</button>
@@ -92,7 +161,7 @@
     <!-- Chat App Screen -->
     <div id="chat-app">
         <header>
-            <span>👻 Snapchat Chat</span>
+            <span>✨ Alpha</span>
             <button class="clear-btn" onclick="clearAllChat()">Clear Chat</button>
         </header>
         <div id="messages"></div>
@@ -171,20 +240,24 @@
         async function toggleRecord() {
             const btn = document.getElementById('record-btn');
             if (!mediaRecorder || mediaRecorder.state === "inactive") {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const reader = new FileReader();
-                    reader.onload = e => {
-                        socket.emit('send-message', { type: 'audio', content: e.target.result });
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.onload = e => {
+                            socket.emit('send-message', { type: 'audio', content: e.target.result });
+                        };
+                        reader.readAsDataURL(blob);
                     };
-                    reader.readAsDataURL(blob);
-                };
-                mediaRecorder.start();
-                btn.innerText = "🛑";
+                    mediaRecorder.start();
+                    btn.innerText = "🛑";
+                } catch (err) {
+                    alert("Microphone access needed to send voice notes!");
+                }
             } else {
                 mediaRecorder.stop();
                 btn.innerText = "🎙️";
