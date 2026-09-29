@@ -13,6 +13,7 @@
             padding: 0; 
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; 
             -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
         
         html, body {
@@ -30,7 +31,7 @@
             justify-content: center; 
         }
 
-        /* --- LANDING / LOGIN SCREEN --- */
+        /* --- LOGIN SCREEN --- */
         #login-modal {
             position: fixed; 
             inset: 0; 
@@ -119,6 +120,7 @@
             font-size: 15px; 
             color: #FFF;
             transition: all 0.2s ease;
+            user-select: text;
         }
 
         input::placeholder { color: #4B5563; }
@@ -162,8 +164,6 @@
             box-shadow: 0 12px 24px rgba(0, 240, 255, 0.3); 
         }
 
-        .submit-btn:active { transform: translateY(0); }
-
         .card-footer {
             margin-top: 20px;
             text-align: center;
@@ -192,6 +192,7 @@
             background: #0D0F12; 
             overflow: hidden; 
             flex-direction: column;
+            position: relative;
         }
         
         header { 
@@ -206,22 +207,52 @@
             font-weight: 600; 
             flex-shrink: 0;
             border-bottom: 1px solid #2A303F;
+            position: relative;
+            z-index: 20;
         }
 
         .header-info { display: flex; flex-direction: column; }
         .online-status { font-size: 12px; color: #10B981; font-weight: 500; margin-top: 2px; }
         
-        .clear-btn {
-            background: rgba(239, 68, 68, 0.15); 
-            color: #EF4444; 
-            font-size: 12px; 
-            padding: 8px 14px;
-            border-radius: 20px; 
-            width: auto; 
-            font-weight: 600;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+        .menu-btn {
+            background: none;
+            border: none;
+            color: #9CA3AF;
+            font-size: 22px;
             cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
         }
+        .menu-btn:hover { color: #FFF; background: rgba(255,255,255,0.05); }
+
+        /* Settings Dropdown */
+        #settings-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 16px;
+            background: #1E2640;
+            border: 1px solid #2A303F;
+            border-radius: 14px;
+            padding: 6px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            z-index: 30;
+            width: 160px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #EF4444;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.15s;
+        }
+
+        .menu-item:hover { background: rgba(239, 68, 68, 0.15); }
 
         #messages {
             flex: 1; 
@@ -234,6 +265,14 @@
             -webkit-overflow-scrolling: touch;
         }
 
+        /* Message Bubble & Swipe Gesture */
+        .msg-wrapper {
+            position: relative;
+            display: flex;
+            width: 100%;
+            touch-action: pan-y;
+        }
+
         .msg { 
             max-width: 82%; 
             padding: 12px 16px; 
@@ -243,10 +282,14 @@
             position: relative; 
             word-wrap: break-word;
             line-height: 1.4;
+            transition: transform 0.15s ease-out;
+            user-select: text;
         }
 
+        .msg-wrapper.sent { justify-content: flex-end; }
+        .msg-wrapper.received { justify-content: flex-start; }
+
         .msg.sent { 
-            align-self: flex-end; 
             background: #00F0FF; 
             color: #0D0F12; 
             border-bottom-right-radius: 4px; 
@@ -254,21 +297,69 @@
         }
 
         .msg.received { 
-            align-self: flex-start; 
             background: #1E2640; 
             color: #F3F4F6; 
             border-bottom-left-radius: 4px; 
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
+
+        /* Quoted Reply Box inside Message */
+        .reply-preview-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-left: 3px solid #00F0FF;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-bottom: 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .msg.sent .reply-preview-box {
+            background: rgba(0, 0, 0, 0.08);
+            border-left-color: #0D0F12;
+        }
+        .reply-preview-sender {
+            font-weight: 700;
+            font-size: 10px;
+            opacity: 0.8;
+            margin-bottom: 2px;
+        }
         
         .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .msg .sender { font-size: 11px; font-weight: 700; opacity: 0.8; }
-        .delete-icon { cursor: pointer; font-size: 12px; opacity: 0.6; margin-left: 8px; }
-        .timer-badge { font-size: 10px; opacity: 0.7; margin-left: 4px; }
 
         .msg img { width: 100%; max-width: 260px; border-radius: 12px; margin-top: 6px; }
         .msg audio { width: 100%; max-width: 220px; margin-top: 6px; }
         .system { text-align: center; color: #6B7280; font-size: 12px; align-self: center; margin: 4px 0; }
+
+        /* Reply Banner above input */
+        #reply-bar {
+            display: none;
+            background: #1E2640;
+            border-top: 1px solid #2A303F;
+            padding: 8px 16px;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+        .reply-content {
+            border-left: 3px solid #00F0FF;
+            padding-left: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 85%;
+        }
+        .reply-title { font-weight: 700; font-size: 11px; color: #00F0FF; }
+        .reply-text { color: #D1D5DB; margin-top: 2px; }
+        .cancel-reply {
+            background: none;
+            border: none;
+            color: #9CA3AF;
+            font-size: 18px;
+            cursor: pointer;
+        }
 
         footer { 
             padding: 12px 16px; 
@@ -309,6 +400,38 @@
 
         #emoji-bar span { cursor: pointer; font-size: 22px; transition: transform 0.1s ease; }
         #emoji-bar span:hover { transform: scale(1.2); }
+
+        /* Action Modal (Long Press / Context Menu) */
+        #action-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .action-card {
+            background: #1E2640;
+            border: 1px solid #2A303F;
+            border-radius: 16px;
+            width: 240px;
+            overflow: hidden;
+            box-shadow: 0 16px 32px rgba(0,0,0,0.5);
+        }
+        .action-item {
+            padding: 14px 18px;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .action-item:last-child { border-bottom: none; }
+        .action-item:hover { background: rgba(255,255,255,0.05); }
+        .action-item.delete { color: #EF4444; }
     </style>
 </head>
 <body>
@@ -354,17 +477,24 @@
                 <span id="room-header-title">✨ Alpha</span>
                 <span id="online-users" class="online-status">🟢 1 online</span>
             </div>
-            <button class="clear-btn" onclick="clearAllChat()">Clear Chat</button>
+            
+            <button class="menu-btn" onclick="toggleSettingsMenu(event)">⋮</button>
+
+            <div id="settings-menu">
+                <div class="menu-item" onclick="clearAllChat()">
+                    <span>🧹</span> Clear Chat
+                </div>
+            </div>
         </header>
 
-        <div id="messages"></div>
+        <div id="messages" onclick="closeSettingsMenu()"></div>
 
-        <div id="emoji-bar">
-            <span onclick="addEmoji('❤️')">❤️</span>
-            <span onclick="addEmoji('🔥')">🔥</span>
-            <span onclick="addEmoji('😂')">😂</span>
-            <span onclick="addEmoji('✨')">✨</span>
-            <span onclick="addEmoji('🥺')">🥺</span>
+        <div id="reply-bar">
+            <div class="reply-content">
+                <div class="reply-title" id="reply-title">Replying to Maverick</div>
+                <div class="reply-text" id="reply-text">Original message text...</div>
+            </div>
+            <button class="cancel-reply" onclick="cancelReply()">✕</button>
         </div>
 
         <footer>
@@ -376,6 +506,18 @@
             <input type="text" id="msg-input" placeholder="Send an encrypted message..." onkeypress="handleKey(event)">
             <button class="submit-btn" onclick="sendText()" style="width: 70px; padding: 12px 0; font-size: 14px; margin-top:0;">Send</button>
         </footer>
+    </div>
+
+    <!-- Long-Press Action Modal -->
+    <div id="action-modal" onclick="closeActionModal(event)">
+        <div class="action-card">
+            <div class="action-item" onclick="triggerReplyFromModal()">
+                <span>↩️</span> Reply
+            </div>
+            <div class="action-item delete" id="modal-delete-btn" onclick="triggerDeleteFromModal()">
+                <span>🗑️</span> Delete Message
+            </div>
+        </div>
     </div>
 
     <script>
@@ -390,6 +532,8 @@
         let currentPassword = '';
         let mediaRecorder;
         let audioChunks = [];
+        let activeReplyData = null;
+        let selectedMsgForAction = null;
 
         // Restore saved details on page load
         window.addEventListener('DOMContentLoaded', () => {
@@ -411,6 +555,16 @@
             }
         }
 
+        function toggleSettingsMenu(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('settings-menu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function closeSettingsMenu() {
+            document.getElementById('settings-menu').style.display = 'none';
+        }
+
         function joinRoom() {
             currentCodename = document.getElementById('codename-input').value.trim();
             currentRoomName = document.getElementById('room-input').value.trim() || 'Alpha';
@@ -418,7 +572,6 @@
 
             if (!currentCodename || !currentPassword) return alert('Please enter your codename and room keycode!');
 
-            // Save to local storage for quick return
             localStorage.setItem('alpha_codename', currentCodename);
             localStorage.setItem('alpha_room', currentRoomName);
 
@@ -450,11 +603,32 @@
         function sendText() {
             const input = document.getElementById('msg-input');
             if (!input.value.trim()) return;
-            socket.emit('send-message', { type: 'text', content: input.value });
+
+            const payload = { 
+                type: 'text', 
+                content: input.value,
+                replyTo: activeReplyData
+            };
+
+            socket.emit('send-message', payload);
             input.value = '';
+            cancelReply();
         }
 
         function handleKey(e) { if (e.key === 'Enter') sendText(); }
+
+        function setReplyMessage(sender, text) {
+            activeReplyData = { sender, text: text.substring(0, 80) };
+            document.getElementById('reply-title').innerText = `Replying to ${sender}`;
+            document.getElementById('reply-text').innerText = text;
+            document.getElementById('reply-bar').style.display = 'flex';
+            document.getElementById('msg-input').focus();
+        }
+
+        function cancelReply() {
+            activeReplyData = null;
+            document.getElementById('reply-bar').style.display = 'none';
+        }
 
         function toggleEmojiBar() {
             const bar = document.getElementById('emoji-bar');
@@ -471,7 +645,8 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
-                socket.emit('send-message', { type: 'image', content: e.target.result });
+                socket.emit('send-message', { type: 'image', content: e.target.result, replyTo: activeReplyData });
+                cancelReply();
             };
             reader.readAsDataURL(file);
         }
@@ -488,7 +663,8 @@
                         const blob = new Blob(audioChunks, { type: 'audio/webm' });
                         const reader = new FileReader();
                         reader.onload = e => {
-                            socket.emit('send-message', { type: 'audio', content: e.target.result });
+                            socket.emit('send-message', { type: 'audio', content: e.target.result, replyTo: activeReplyData });
+                            cancelReply();
                         };
                         reader.readAsDataURL(blob);
                     };
@@ -503,14 +679,45 @@
             }
         }
 
-        function deleteMsg(msgId) {
-            socket.emit('delete-message', msgId);
-        }
-
         function clearAllChat() {
+            closeSettingsMenu();
             if (confirm("Are you sure you want to clear this room?")) {
                 socket.emit('clear-chat');
             }
+        }
+
+        // --- LONG PRESS & SWIPE GESTURES ---
+        function openActionModal(msgData, isMe) {
+            selectedMsgForAction = msgData;
+            const modal = document.getElementById('action-modal');
+            const deleteBtn = document.getElementById('modal-delete-btn');
+            
+            // Only allow deleting own messages (or allow all if desired)
+            deleteBtn.style.display = isMe ? 'flex' : 'none';
+            modal.style.display = 'flex';
+        }
+
+        function closeActionModal(e) {
+            if (e.target.id === 'action-modal') {
+                document.getElementById('action-modal').style.display = 'none';
+            }
+        }
+
+        function triggerReplyFromModal() {
+            if (selectedMsgForAction) {
+                let previewText = selectedMsgForAction.content;
+                if (selectedMsgForAction.type === 'image') previewText = '📷 Photo';
+                if (selectedMsgForAction.type === 'audio') previewText = '🎙️ Voice note';
+                setReplyMessage(selectedMsgForAction.sender, previewText);
+            }
+            document.getElementById('action-modal').style.display = 'none';
+        }
+
+        function triggerDeleteFromModal() {
+            if (selectedMsgForAction) {
+                socket.emit('delete-message', selectedMsgForAction.id);
+            }
+            document.getElementById('action-modal').style.display = 'none';
         }
 
         socket.on('system-message', (msg) => {
@@ -528,17 +735,81 @@
             else if (data.type === 'image') body = `<img src="${data.content}" />`;
             else if (data.type === 'audio') body = `<audio controls src="${data.content}"></audio>`;
 
-            const html = `
-                <div class="msg ${isMe ? 'sent' : 'received'}" id="${data.id}">
+            let replyHtml = '';
+            if (data.replyTo) {
+                replyHtml = `
+                    <div class="reply-preview-box">
+                        <div class="reply-preview-sender">${data.replyTo.sender}</div>
+                        ${data.replyTo.text}
+                    </div>
+                `;
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = `msg-wrapper ${isMe ? 'sent' : 'received'}`;
+            wrapper.id = data.id;
+
+            wrapper.innerHTML = `
+                <div class="msg ${isMe ? 'sent' : 'received'}">
+                    ${replyHtml}
                     <div class="msg-header">
-                        <span class="sender">${isMe ? 'You' : data.sender} • ${data.time} <span class="timer-badge">⏳60s</span></span>
-                        <span class="delete-icon" onclick="deleteMsg('${data.id}')" title="Delete immediately">🗑️</span>
+                        <span class="sender">${isMe ? 'You' : data.sender} • ${data.time}</span>
                     </div>
                     ${body}
                 </div>
             `;
-            container.innerHTML += html;
+
+            container.appendChild(wrapper);
             container.scrollTop = container.scrollHeight;
+
+            // Attach touch swipe & long press listeners
+            const msgEl = wrapper.querySelector('.msg');
+            let pressTimer;
+            let startX = 0;
+            let currentX = 0;
+
+            // Long press
+            const startPress = () => {
+                pressTimer = setTimeout(() => {
+                    openActionModal(data, isMe);
+                }, 500);
+            };
+
+            const cancelPress = () => clearTimeout(pressTimer);
+
+            msgEl.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                startPress();
+            }, { passive: true });
+
+            msgEl.addEventListener('touchend', (e) => {
+                cancelPress();
+                msgEl.style.transform = 'translateX(0px)';
+                if (currentX - startX > 60) {
+                    // Swiped right -> Trigger Reply
+                    let previewText = data.content;
+                    if (data.type === 'image') previewText = '📷 Photo';
+                    if (data.type === 'audio') previewText = '🎙️ Voice note';
+                    setReplyMessage(data.sender, previewText);
+                }
+                startX = 0;
+                currentX = 0;
+            });
+
+            msgEl.addEventListener('touchmove', (e) => {
+                currentX = e.touches[0].clientX;
+                const diff = currentX - startX;
+                if (diff > 0 && diff < 80) { // Limit rightward swipe distance
+                    msgEl.style.transform = `translateX(${diff}px)`;
+                }
+                if (Math.abs(diff) > 10) cancelPress();
+            }, { passive: true });
+
+            // Desktop Right-Click context menu support
+            msgEl.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                openActionModal(data, isMe);
+            });
         });
 
         socket.on('message-deleted', (msgId) => {
