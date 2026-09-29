@@ -6,65 +6,107 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
-// Force WebSockets and enable CORS for multi-user stability
 const io = new Server(server, {
-    maxHttpBufferSize: 1e7, // 10MB limit
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    },
-    transports: ['websocket', 'polling']
+  cors: { origin: "*", methods: ["GET", "POST"] },
+  pingTimeout: 60000,   // Keeps connections alive on mobile
+  pingInterval: 25000
 });
-
-const ROOM_PASSWORD = "love"; 
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Store room details: { roomName: { password: "xxx", messages: [], users: {} } }
+const rooms = {};
+const MESSAGE_TTL = 60 * 1000; 
+
+function updateRoomUsers(room) {
+  if (!rooms[room]) return;
+  const onlineUsers = Object.values(rooms[room].users);
+  io.to(room).emit('room-users-update', {
+    count: onlineUsers.length,
+    users: onlineUsers
+  });
+}
+
 io.on('connection', (socket) => {
-    console.log(`New user connecting: ${socket.id}`);
+  let currentRoom = null;
+  let currentUser = null;
 
-    socket.on('join-room', ({ codename, password }, callback) => {
-        if (password !== ROOM_PASSWORD) {
-            return callback({ success: false, message: 'Incorrect Room Password!' });
-        }
-        
-        socket.codename = codename;
-        callback({ success: true });
+  socket.on('join-room', ({ room = 'Alpha', password, codename }, callback) => {
+    if (!codename || !password) {
+      return callback({ success: false, message: 'Name and password required!' });
+    }
 
-        // Notify room user joined
-        io.emit('system-message', `${codename} joined the chat ✨`);
-    });
+    if (!rooms[room]) {
+      rooms[room] = { password: password, messages: [], users: {} };
+    }
 
-    socket.on('send-message', (data) => {
-        if (!socket.codename) return;
-        
-        const messageData = {
-            id: 'msg-' + Date.now(),
-            sender: socket.codename,
-            type: data.type,
-            content: data.content,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
+    if (rooms[room].password !== password) {
+      return callback({ success: false, message: 'Incorrect room password!' });
+    }
 
-        io.emit('receive-message', messageData);
-    });
+    socket.join(room);
+    currentRoom = room;
+    currentUser = codename;
 
-    socket.on('delete-message', (msgId) => {
-        io.emit('message-deleted', msgId);
-    });
+    // Add user to online list
+    rooms[room].users[socket.id] = codename;
 
-    socket.on('clear-chat', () => {
-        io.emit('chat-cleared');
-    });
+    callback({ success: true, room });
 
-    socket.on('disconnect', () => {
-        if (socket.codename) {
-            io.emit('system-message', `${socket.codename} left the chat.`);
-        }
-    });
+    io.to(room).emit('system-message', `✨ ${codename} joined ${room}`);
+    updateRoomUsers(room);
+  });
+
+  socket.on('send-message', (msgData) => {
+    if (!currentRoom || !currentUser) return;
+
+    const message = {
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 5),
+      sender: currentUser,
+      type: msgData.type,
+      content: msgData.content,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    if (rooms[currentRoom]) {
+      rooms[currentRoom].messages.push(message);
+    }
+
+    io.to(currentRoom).emit('receive-message', message);
+
+    // Auto-delete message after TTL
+    setTimeout(() => {
+      if (rooms[currentRoom]) {
+        rooms[currentRoom].messages = rooms[currentRoom].messages.filter(m => m.id !== message.id);
+      }
+      io.to(currentRoom).emit('message-deleted', message.id);
+    }, MESSAGE_TTL);
+  });
+
+  socket.on('delete-message', (msgId) => {
+    if (!currentRoom) return;
+    if (rooms[currentRoom]) {
+      rooms[currentRoom].messages = rooms[currentRoom].messages.filter(m => m.id !== msgId);
+    }
+    io.to(currentRoom).emit('message-deleted', msgId);
+  });
+
+  socket.on('clear-chat', () => {
+    if (!currentRoom) return;
+    if (rooms[currentRoom]) {
+      rooms[currentRoom].messages = [];
+    }
+    io.to(currentRoom).emit('chat-cleared');
+  });
+
+  socket.on('disconnect', () => {
+    if (currentRoom && rooms[currentRoom] && rooms[currentRoom].users[socket.id]) {
+      delete rooms[currentRoom].users[socket.id];
+      io.to(currentRoom).emit('system-message', `${currentUser} left the chat.`);
+      updateRoomUsers(currentRoom);
+    }
+  });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server live on http://localhost:${PORT}`);
-});
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

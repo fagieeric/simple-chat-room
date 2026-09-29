@@ -29,7 +29,6 @@
             justify-content: center; 
         }
 
-        /* Login Modal */
         #login-modal {
             position: fixed; 
             inset: 0; 
@@ -76,7 +75,6 @@
         }
         button:hover { transform: scale(1.02); background: #00D8E6; }
 
-        /* Full Screen Chat App - Mobile Safe */
         #chat-app {
             display: none; 
             width: 100vw; 
@@ -90,15 +88,19 @@
         header { 
             background: #111; 
             color: #FFFC00; 
-            padding: 16px 20px; 
-            padding-top: max(16px, env(safe-area-inset-top));
+            padding: 14px 20px; 
+            padding-top: max(14px, env(safe-area-inset-top));
             display: flex; 
             justify-content: space-between; 
             align-items: center;
             font-size: 18px; 
             font-weight: 600; 
             flex-shrink: 0;
+            border-bottom: 1px solid #222;
         }
+        .header-info { display: flex; flex-direction: column; }
+        .online-status { font-size: 12px; color: #00FF66; font-weight: normal; margin-top: 2px; }
+        
         .clear-btn {
             background: #FF2A85; 
             color: #fff; 
@@ -140,7 +142,6 @@
         .msg audio { width: 100%; max-width: 220px; margin-top: 5px; }
         .system { text-align: center; color: #888; font-size: 12px; align-self: center; }
 
-        /* Footer - Dynamic Mobile Inset */
         footer { 
             padding: 10px 12px; 
             padding-bottom: max(12px, env(safe-area-inset-bottom));
@@ -189,7 +190,10 @@
 
     <div id="chat-app">
         <header>
-            <span id="room-header-title">✨ Alpha</span>
+            <div class="header-info">
+                <span id="room-header-title">✨ Alpha</span>
+                <span id="online-users" class="online-status">🟢 1 online</span>
+            </div>
             <button class="clear-btn" onclick="clearAllChat()">Clear Chat</button>
         </header>
         <div id="messages"></div>
@@ -214,26 +218,31 @@
     </div>
 
     <script>
-        const socket = io();
+        const socket = io({
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000
+        });
+
         let currentCodename = '';
+        let currentRoomName = '';
+        let currentPassword = '';
         let mediaRecorder;
         let audioChunks = [];
 
         function joinRoom() {
-            const codename = document.getElementById('codename-input').value.trim();
-            const room = document.getElementById('room-input').value.trim() || 'Alpha';
-            const password = document.getElementById('password-input').value.trim();
+            currentCodename = document.getElementById('codename-input').value.trim();
+            currentRoomName = document.getElementById('room-input').value.trim() || 'Alpha';
+            currentPassword = document.getElementById('password-input').value.trim();
 
-            if (!codename || !password) return alert('Please enter your name and password!');
+            if (!currentCodename || !currentPassword) return alert('Please enter your name and password!');
 
-            socket.emit('join-room', { codename, room, password }, (res) => {
+            socket.emit('join-room', { codename: currentCodename, room: currentRoomName, password: currentPassword }, (res) => {
                 if (res.success) {
-                    currentCodename = codename;
                     document.getElementById('room-header-title').innerText = `✨ ${res.room}`;
                     document.getElementById('login-modal').style.display = 'none';
                     document.getElementById('chat-app').style.display = 'flex';
                     
-                    // Scroll to bottom on join
                     const msgBox = document.getElementById('messages');
                     msgBox.scrollTop = msgBox.scrollHeight;
                 } else {
@@ -241,6 +250,18 @@
                 }
             });
         }
+
+        // Auto-rejoin if phone drops connection momentarily
+        socket.on('connect', () => {
+            if (currentCodename && currentPassword) {
+                socket.emit('join-room', { codename: currentCodename, room: currentRoomName, password: currentPassword }, () => {});
+            }
+        });
+
+        socket.on('room-users-update', (data) => {
+            const onlineText = document.getElementById('online-users');
+            onlineText.innerText = `🟢 ${data.count} online (${data.users.join(', ')})`;
+        });
 
         function sendText() {
             const input = document.getElementById('msg-input');
