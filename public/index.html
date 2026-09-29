@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alpha</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <title>Alpha | Secure Messenger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { 
             box-sizing: border-box; 
             margin: 0; 
             padding: 0; 
-            font-family: 'Fredoka', cursive, sans-serif; 
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; 
             -webkit-tap-highlight-color: transparent;
         }
         
@@ -20,7 +20,8 @@
             height: 100dvh;
             width: 100vw;
             overflow: hidden;
-            background: #FFFC00;
+            background: #0D0F12;
+            color: #F3F4F6;
         }
 
         body { 
@@ -29,65 +30,173 @@
             justify-content: center; 
         }
 
+        /* --- LANDING / LOGIN SCREEN --- */
         #login-modal {
             position: fixed; 
             inset: 0; 
-            background: #FFFC00;
+            background: radial-gradient(circle at top center, #1E2640 0%, #0D0F12 70%);
             display: flex; 
             flex-direction: column; 
             align-items: center; 
             justify-content: center; 
             z-index: 10;
-            padding: 20px;
+            padding: 24px;
         }
-        .card {
-            background: #fff; 
-            padding: 24px; 
-            border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
-            width: 100%; 
-            max-width: 360px; 
+
+        .brand-header {
             text-align: center;
+            margin-bottom: 28px;
         }
-        .card h2 { color: #000; margin-bottom: 16px; font-size: 24px; }
+
+        .brand-logo {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #00F0FF 0%, #7000FF 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 800;
+            color: #FFF;
+            margin: 0 auto 16px;
+            box-shadow: 0 12px 32px rgba(0, 240, 255, 0.25);
+        }
+
+        .brand-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #FFFFFF;
+            margin-bottom: 6px;
+        }
+
+        .brand-header p {
+            font-size: 14px;
+            color: #9CA3AF;
+        }
+
+        .card {
+            background: rgba(22, 27, 38, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 28px; 
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4); 
+            width: 100%; 
+            max-width: 400px; 
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #9CA3AF;
+            margin-bottom: 6px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
         input {
             width: 100%; 
-            padding: 14px; 
-            margin-bottom: 12px; 
-            border: 2px solid #EEE;
+            padding: 14px 16px; 
+            background: #11141C;
+            border: 1px solid #2A303F;
             border-radius: 12px; 
             outline: none; 
-            font-size: 16px; 
-            transition: 0.2s;
+            font-size: 15px; 
+            color: #FFF;
+            transition: all 0.2s ease;
         }
-        input:focus { border-color: #000; }
-        button {
+
+        input::placeholder { color: #4B5563; }
+
+        input:focus { 
+            border-color: #00F0FF; 
+            box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.15);
+        }
+
+        .toggle-pwd {
+            position: absolute;
+            right: 14px;
+            background: none;
+            border: none;
+            color: #6B7280;
+            cursor: pointer;
+            font-size: 14px;
+            width: auto;
+            padding: 0;
+        }
+
+        .toggle-pwd:hover { color: #FFF; }
+
+        .submit-btn {
             width: 100%; 
-            padding: 14px; 
-            background: #00F0FF; 
-            color: #000; 
+            padding: 15px; 
+            background: linear-gradient(135deg, #00F0FF 0%, #00A3FF 100%); 
+            color: #0D0F12; 
             border: none;
             border-radius: 12px; 
-            font-weight: 600; 
-            font-size: 18px; 
+            font-weight: 700; 
+            font-size: 16px; 
             cursor: pointer; 
-            transition: 0.2s;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+            box-shadow: 0 8px 20px rgba(0, 240, 255, 0.2);
         }
-        button:hover { transform: scale(1.02); background: #00D8E6; }
 
+        .submit-btn:hover { 
+            transform: translateY(-1px); 
+            box-shadow: 0 12px 24px rgba(0, 240, 255, 0.3); 
+        }
+
+        .submit-btn:active { transform: translateY(0); }
+
+        .card-footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6B7280;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10B981;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* --- CHAT INTERFACE --- */
         #chat-app {
             display: none; 
             width: 100vw; 
             height: 100%;
             height: 100dvh;
-            background: #000; 
+            background: #0D0F12; 
             overflow: hidden; 
             flex-direction: column;
         }
         
         header { 
-            background: #111; 
-            color: #FFFC00; 
+            background: #11141C; 
+            color: #FFF; 
             padding: 14px 20px; 
             padding-top: max(14px, env(safe-area-inset-top));
             display: flex; 
@@ -96,19 +205,22 @@
             font-size: 18px; 
             font-weight: 600; 
             flex-shrink: 0;
-            border-bottom: 1px solid #222;
+            border-bottom: 1px solid #2A303F;
         }
+
         .header-info { display: flex; flex-direction: column; }
-        .online-status { font-size: 12px; color: #00FF66; font-weight: normal; margin-top: 2px; }
+        .online-status { font-size: 12px; color: #10B981; font-weight: 500; margin-top: 2px; }
         
         .clear-btn {
-            background: #FF2A85; 
-            color: #fff; 
+            background: rgba(239, 68, 68, 0.15); 
+            color: #EF4444; 
             font-size: 12px; 
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 20px; 
             width: auto; 
-            font-weight: normal;
+            font-weight: 600;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            cursor: pointer;
         }
 
         #messages {
@@ -118,73 +230,121 @@
             display: flex; 
             flex-direction: column; 
             gap: 12px;
-            background: #121212;
+            background: #0D0F12;
             -webkit-overflow-scrolling: touch;
         }
+
         .msg { 
             max-width: 82%; 
-            padding: 10px 14px; 
-            border-radius: 16px; 
-            color: #fff; 
+            padding: 12px 16px; 
+            border-radius: 18px; 
+            color: #FFF; 
             font-size: 15px; 
             position: relative; 
             word-wrap: break-word;
+            line-height: 1.4;
         }
-        .msg.sent { align-self: flex-end; background: #00F0FF; color: #000; border-bottom-right-radius: 4px; }
-        .msg.received { align-self: flex-start; background: #FF2A85; color: #fff; border-bottom-left-radius: 4px; }
+
+        .msg.sent { 
+            align-self: flex-end; 
+            background: #00F0FF; 
+            color: #0D0F12; 
+            border-bottom-right-radius: 4px; 
+            font-weight: 500;
+        }
+
+        .msg.received { 
+            align-self: flex-start; 
+            background: #1E2640; 
+            color: #F3F4F6; 
+            border-bottom-left-radius: 4px; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
         
         .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-        .msg .sender { font-size: 11px; font-weight: bold; opacity: 0.8; }
+        .msg .sender { font-size: 11px; font-weight: 700; opacity: 0.8; }
         .delete-icon { cursor: pointer; font-size: 12px; opacity: 0.6; margin-left: 8px; }
         .timer-badge { font-size: 10px; opacity: 0.7; margin-left: 4px; }
 
-        .msg img { width: 100%; max-width: 260px; border-radius: 12px; margin-top: 5px; }
-        .msg audio { width: 100%; max-width: 220px; margin-top: 5px; }
-        .system { text-align: center; color: #888; font-size: 12px; align-self: center; }
+        .msg img { width: 100%; max-width: 260px; border-radius: 12px; margin-top: 6px; }
+        .msg audio { width: 100%; max-width: 220px; margin-top: 6px; }
+        .system { text-align: center; color: #6B7280; font-size: 12px; align-self: center; margin: 4px 0; }
 
         footer { 
-            padding: 10px 12px; 
-            padding-bottom: max(12px, env(safe-area-inset-bottom));
-            background: #111; 
+            padding: 12px 16px; 
+            padding-bottom: max(14px, env(safe-area-inset-bottom));
+            background: #11141C; 
             display: flex; 
-            gap: 8px; 
+            gap: 10px; 
             align-items: center; 
             position: relative;
             flex-shrink: 0;
+            border-top: 1px solid #2A303F;
         }
+
         footer input[type="text"] { 
             margin-bottom: 0; 
-            background: #222; 
-            color: #fff; 
-            border: none; 
+            background: #1B202D; 
+            color: #FFF; 
+            border: 1px solid #2A303F; 
             font-size: 15px;
-            padding: 12px;
+            padding: 12px 16px;
         }
-        .icon-btn { background: none; border: none; font-size: 20px; cursor: pointer; width: auto; padding: 4px; }
+
+        .icon-btn { background: none; border: none; font-size: 20px; cursor: pointer; width: auto; padding: 4px; color: #9CA3AF; }
+        .icon-btn:hover { color: #FFF; }
         
         #emoji-bar {
             display: none; 
             position: absolute; 
-            bottom: calc(100% + 5px); 
-            left: 12px; 
-            background: #222;
-            padding: 8px; 
-            border-radius: 12px; 
-            gap: 8px;
+            bottom: calc(100% + 8px); 
+            left: 16px; 
+            background: #1E2640;
+            padding: 10px; 
+            border-radius: 14px; 
+            gap: 10px;
             z-index: 5;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        #emoji-bar span { cursor: pointer; font-size: 22px; }
+
+        #emoji-bar span { cursor: pointer; font-size: 22px; transition: transform 0.1s ease; }
+        #emoji-bar span:hover { transform: scale(1.2); }
     </style>
 </head>
 <body>
 
     <div id="login-modal">
+        <div class="brand-header">
+            <div class="brand-logo">A</div>
+            <h1>Alpha Messenger</h1>
+            <p>Private, ephemeral rooms that self-destruct</p>
+        </div>
+
         <div class="card">
-            <h2>✨ Join Alpha</h2>
-            <input type="text" id="codename-input" placeholder="Your Code Name...">
-            <input type="text" id="room-input" placeholder="Room Name..." value="Alpha">
-            <input type="password" id="password-input" placeholder="Room Password...">
-            <button onclick="joinRoom()">Enter Chat</button>
+            <div class="input-group">
+                <label for="codename-input">Codename</label>
+                <input type="text" id="codename-input" placeholder="e.g. Maverick" autocomplete="off">
+            </div>
+
+            <div class="input-group">
+                <label for="room-input">Room Identifier</label>
+                <input type="text" id="room-input" placeholder="e.g. Alpha" value="Alpha" autocomplete="off">
+            </div>
+
+            <div class="input-group">
+                <label for="password-input">Room Keycode</label>
+                <div class="input-wrapper">
+                    <input type="password" id="password-input" placeholder="Enter room keycode">
+                    <button class="toggle-pwd" type="button" onclick="togglePasswordVisibility()">Show</button>
+                </div>
+            </div>
+
+            <button class="submit-btn" onclick="joinRoom()">Enter Secure Room</button>
+
+            <div class="card-footer">
+                <span class="status-dot"></span>
+                <span>Encrypted Socket Network Active</span>
+            </div>
         </div>
     </div>
 
@@ -196,6 +356,7 @@
             </div>
             <button class="clear-btn" onclick="clearAllChat()">Clear Chat</button>
         </header>
+
         <div id="messages"></div>
 
         <div id="emoji-bar">
@@ -212,8 +373,8 @@
             <button class="icon-btn" id="record-btn" onclick="toggleRecord()">🎙️</button>
             
             <input type="file" id="file-input" accept="image/*" style="display:none" onchange="sendFile(this)">
-            <input type="text" id="msg-input" placeholder="Send a chat..." onkeypress="handleKey(event)">
-            <button onclick="sendText()" style="width: 55px; padding: 12px 0; font-size: 14px;">Send</button>
+            <input type="text" id="msg-input" placeholder="Send an encrypted message..." onkeypress="handleKey(event)">
+            <button class="submit-btn" onclick="sendText()" style="width: 70px; padding: 12px 0; font-size: 14px; margin-top:0;">Send</button>
         </footer>
     </div>
 
@@ -230,12 +391,36 @@
         let mediaRecorder;
         let audioChunks = [];
 
+        // Restore saved details on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedName = localStorage.getItem('alpha_codename');
+            const savedRoom = localStorage.getItem('alpha_room');
+            if (savedName) document.getElementById('codename-input').value = savedName;
+            if (savedRoom) document.getElementById('room-input').value = savedRoom;
+        });
+
+        function togglePasswordVisibility() {
+            const pwdInput = document.getElementById('password-input');
+            const btn = document.querySelector('.toggle-pwd');
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                btn.innerText = 'Hide';
+            } else {
+                pwdInput.type = 'password';
+                btn.innerText = 'Show';
+            }
+        }
+
         function joinRoom() {
             currentCodename = document.getElementById('codename-input').value.trim();
             currentRoomName = document.getElementById('room-input').value.trim() || 'Alpha';
             currentPassword = document.getElementById('password-input').value.trim();
 
-            if (!currentCodename || !currentPassword) return alert('Please enter your name and password!');
+            if (!currentCodename || !currentPassword) return alert('Please enter your codename and room keycode!');
+
+            // Save to local storage for quick return
+            localStorage.setItem('alpha_codename', currentCodename);
+            localStorage.setItem('alpha_room', currentRoomName);
 
             socket.emit('join-room', { codename: currentCodename, room: currentRoomName, password: currentPassword }, (res) => {
                 if (res.success) {
@@ -251,7 +436,6 @@
             });
         }
 
-        // Auto-rejoin if phone drops connection momentarily
         socket.on('connect', () => {
             if (currentCodename && currentPassword) {
                 socket.emit('join-room', { codename: currentCodename, room: currentRoomName, password: currentPassword }, () => {});
